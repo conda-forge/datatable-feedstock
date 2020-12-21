@@ -1,5 +1,5 @@
 {% set name = "datatable" %}
-{% set version = "0.11.0" %}
+{% set version = "0.11.1" %}
 
 
 package:
@@ -8,10 +8,10 @@ package:
 
 source:
   url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/datatable-{{ version }}.tar.gz
-  sha256: 19c602711e00f72e9ae296d8fa742d46da037c2d3a2d254bdf68f817a8da76bb
+  sha256: 3c3a7d3bee3c463a36fe77c5d4747278a741c23fc6c6e2dba110deec200502ba
 
 build:
-  number: 1
+  number: 0
   skip: true  # [py<35 or win]
 
 # numpy and pandas are _optional_ dependencies of dataframe
