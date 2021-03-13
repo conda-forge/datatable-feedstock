@@ -11,7 +11,7 @@ source:
   sha256: 3c3a7d3bee3c463a36fe77c5d4747278a741c23fc6c6e2dba110deec200502ba
 
 build:
-  number: 0
+  number: 1
   skip: true  # [py<35 or win]
 
 # numpy and pandas are _optional_ dependencies of dataframe
