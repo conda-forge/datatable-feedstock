@@ -1,5 +1,5 @@
 {% set name = "datatable" %}
-{% set version = "0.11.1" %}
+{% set version = "1.0.0" %}
 
 
 package:
@@ -8,7 +8,7 @@ package:
 
 source:
   url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/datatable-{{ version }}.tar.gz
-  sha256: 3c3a7d3bee3c463a36fe77c5d4747278a741c23fc6c6e2dba110deec200502ba
+  sha256: 59a00a4a928f9b06f881d4f7b5e9025c559c4f65facf903a5d08e6e94d84c31e
 
 build:
   number: 0
