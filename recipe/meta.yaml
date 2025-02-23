@@ -12,9 +12,8 @@ source:
 
 build:
   number: 0
-  skip: true  # [py<35 or win]
+  skip: true  # [py>312 or win]
 
-# numpy and pandas are _optional_ dependencies of dataframe
 requirements:
   build:
     - {{ compiler('cxx') }}
@@ -22,6 +21,7 @@ requirements:
   host:
     - pip
     - python
+    - setuptools
   run:
     - python
 
@@ -37,15 +37,23 @@ test:
     - LICENSE
   commands:
     - rm tests/test-docs.py
-    - pytest tests -k 'not test_fread_from_cmd2 and not test_dt_version'
+    - pytest tests
   requires:
     - pip
+    # requirements_extra.txt
     - numpy
     - pandas
-    - xlrd
+    - pyarrow
+    - xlrd <=1.2.0
+    # requirements_docs.txt
+    - docutils >=0.15
+    - pygments >=2.6
+    - sphinx >=4.0,<5.0
+    - sphinx_rtd_theme >=0.5
+    - nbsphinx >=0.5
+    # requirements_tests.txt
     - pytest >=3.1
     - pytest-cov
-    - docutils >=0.14
 
 about:
   home: https://github.com/h2oai/datatable
@@ -55,3 +63,4 @@ about:
 
 extra:
   recipe-maintainers:
+    - xylar

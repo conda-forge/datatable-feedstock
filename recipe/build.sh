@@ -15,9 +15,12 @@ fi
 EOF
 
 chmod +x fake-git
-mv fake-git git
-echo "${PKG_VERSION}" >VERSION.txt  # needed despite claims in `ci/ext.py` to the contrary
-env PATH=.:"$PATH" "$PYTHON" ci/ext.py build
-env PATH=.:"$PATH" "$PYTHON" -m pip install . -vv
-mv git fake-git
+# mv fake-git git
+# echo "${PKG_VERSION}" >VERSION.txt  # needed despite claims in `ci/ext.py` to the contrary
+# env PATH=.:"$PATH" "$PYTHON" ci/ext.py build
+# env PATH=.:"$PATH" "$PYTHON" -m pip install . -vv
+# mv git fake-git
+
+"$PYTHON" ci/ext.py build
+"$PYTHON" -m pip install . -vv --no-deps --no-build-isolation
 }
