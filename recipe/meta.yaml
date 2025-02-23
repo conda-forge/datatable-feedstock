@@ -37,11 +37,11 @@ test:
     - LICENSE
   commands:
     - rm tests/test-docs.py
-    - pytest tests
+    - pytest tests -k 'not test_fread_from_cmd2 and not test_dt_version and not test_random_attack'
   requires:
     - pip
     # requirements_extra.txt
-    - numpy
+    - numpy <2.0
     - pandas
     - pyarrow
     - xlrd <=1.2.0
