@@ -1,5 +1,5 @@
 {% set name = "datatable" %}
-{% set version = "0.11.1" %}
+{% set version = "1.1.0" %}
 
 
 package:
@@ -7,20 +7,24 @@ package:
   version: {{ version }}
 
 source:
-  url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/datatable-{{ version }}.tar.gz
-  sha256: 3c3a7d3bee3c463a36fe77c5d4747278a741c23fc6c6e2dba110deec200502ba
+  url: https://pypi.org/packages/source/{{ name[0] }}/{{ name }}/datatable-{{ version }}.tar.gz
+  sha256: 8a9f6953ef6b02ede3d7c490f17d5c18c9b1bf2d58dd5451a8cac40ed887d775
 
 build:
   number: 0
-  skip: true  # [py<35 or win]
+  skip: true  # [py>312 or win]
+  script: |
+    {{ PYTHON }} ci/ext.py build
+    {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
 
-# numpy and pandas are _optional_ dependencies of dataframe
 requirements:
   build:
     - {{ compiler('cxx') }}
+    - {{ stdlib("c") }}
   host:
     - pip
     - python
+    - setuptools
   run:
     - python
 
@@ -36,15 +40,23 @@ test:
     - LICENSE
   commands:
     - rm tests/test-docs.py
-    - pytest tests -k 'not test_fread_from_cmd2 and not test_dt_version'
+    - pytest tests -k 'not test_fread_from_cmd2 and not test_dt_version and not test_random_attack'
   requires:
     - pip
-    - numpy
+    # requirements_extra.txt
+    - numpy <2.0
     - pandas
-    - xlrd
+    - pyarrow
+    - xlrd <=1.2.0
+    # requirements_docs.txt
+    - docutils >=0.15
+    - pygments >=2.6
+    - sphinx >=4.0,<5.0
+    - sphinx_rtd_theme >=0.5
+    - nbsphinx >=0.5
+    # requirements_tests.txt
     - pytest >=3.1
     - pytest-cov
-    - docutils >=0.14
 
 about:
   home: https://github.com/h2oai/datatable
@@ -54,3 +66,4 @@ about:
 
 extra:
   recipe-maintainers:
+    - xylar
