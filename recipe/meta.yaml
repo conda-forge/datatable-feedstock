@@ -11,7 +11,7 @@ source:
   sha256: 8a9f6953ef6b02ede3d7c490f17d5c18c9b1bf2d58dd5451a8cac40ed887d775
 
 build:
-  number: 0
+  number: 1
   skip: true  # [py>312 or win]
   script: |
     {{ PYTHON }} ci/ext.py build
