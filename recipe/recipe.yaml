@@ -11,6 +11,10 @@ package:
 source:
   url: https://pypi.org/packages/source/${{ name[0] }}/${{ name }}/datatable-${{ version }}.tar.gz
   sha256: 8a9f6953ef6b02ede3d7c490f17d5c18c9b1bf2d58dd5451a8cac40ed887d775
+  patches:
+    # the vendored flatbuffers has an invalid span::operator= that GCC 15
+    # rejects at template definition time
+    - patches/0001-remove-invalid-span-assignment-operator.patch
 
 build:
   number: 1
