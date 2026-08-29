@@ -1,0 +1,117 @@
+From: conda-forge
+Subject: [PATCH] Make dt.Type a regular static extension type
+
+XObject's 'dynamic' mode created the class by calling type(), then patched
+tp_basicsize to append a C++ field to each instance, reserving two slots for
+__dict__/__weakref__.  Since python 3.11 such classes use a managed dict and
+managed weakrefs, so those assumptions no longer hold: on 3.13 the first
+garbage collection walks a corrupted __dict__ and segfaults.  Register the
+class attributes in tp_dict of a normal static type instead.
+
+--- a/src/core/python/xobject.h
++++ b/src/core/python/xobject.h
+@@ -22,6 +22,7 @@
+ #ifndef dt_PYTHON_XOBJECT_h
+ #define dt_PYTHON_XOBJECT_h
+ #include <cstring>    // std::memcpy, std::memset, std::strrchr
++#include <utility>    // std::pair
+ #include <vector>     // std::vector
+ #include <Python.h>
+ #include "call_logger.h"
+@@ -48,9 +49,11 @@
+     size_t object_size;
+     const char* class_name_;
+     bool dynamic_type_;
+-    size_t : 56;
++    bool finalized_ = false;
++    size_t : 48;
+     std::vector<PyGetSetDef> get_defs;
+     std::vector<PyMethodDef> meth_defs;
++    std::vector<std::pair<const char*, py::oobj>> attr_defs;
+ 
+   public:
+     static struct ConstructorTag {}   constructor_tag;
+@@ -184,6 +187,7 @@
+     void add(inquiry meth, NbBoolTag);
+ 
+     void finalize();
++    void finalize_attrs();
+     void finalize_getsets();
+     void finalize_methods();
+ 
+--- a/src/core/python/xobject.cc
++++ b/src/core/python/xobject.cc
+@@ -98,6 +98,8 @@
+ 
+ 
+ void XTypeMaker::finalize() {
++  if (finalized_) return;
++  finalized_ = true;
+   xassert(type->tp_dealloc);
+   xassert(type->tp_init);
+   xassert(type->tp_name);
+@@ -106,10 +108,22 @@
+   if (!dynamic_type_) {
+     int r = PyType_Ready(type);
+     if (r < 0) throw PyError();
++    finalize_attrs();
+   }
+ }
+ 
+ 
++void XTypeMaker::finalize_attrs() {
++  for (auto& attr : attr_defs) {
++    int r = PyDict_SetItemString(type->tp_dict, attr.first,
++                                 attr.second.to_borrowed_ref());
++    if (r < 0) throw PyError();
++  }
++  PyType_Modified(type);
++  attr_defs.clear();
++}
++
++
+ PyObject* XTypeMaker::get_type_object() const {
+   return reinterpret_cast<PyObject*>(type);
+ }
+@@ -168,8 +182,18 @@
+ // An attribute can only be set on a dynamically allocated type
+ void XTypeMaker::add_attr(const char* name, py::oobj value) {
+   xassert(type);
+-  xassert(dynamic_type_);
+-  py::robj(type).set_attr(name, value);
++  if (dynamic_type_) {
++    py::robj(type).set_attr(name, value);
++  } else if (type->tp_dict) {
++    int r = PyDict_SetItemString(type->tp_dict, name,
++                                 value.to_borrowed_ref());
++    if (r < 0) throw PyError();
++    PyType_Modified(type);
++  } else {
++    // A static type's `tp_dict` is only created by `PyType_Ready()`, so if
++    // the type isn't ready yet the attribute has to wait for `finalize()`.
++    attr_defs.emplace_back(name, std::move(value));
++  }
+ }
+ 
+ 
+--- a/src/core/types/py_type.h
++++ b/src/core/types/py_type.h
+@@ -39,7 +39,7 @@
+   * This mechanism is used because the "standard" extension types do
+   * not allow to define class properties (which we need).
+   */
+-class PyType : public py::XObject<PyType, true> {
++class PyType : public py::XObject<PyType> {
+   private:
+     Type type_;
+ 
+--- a/src/core/types/py_type.cc
++++ b/src/core/types/py_type.cc
+@@ -458,6 +458,7 @@
+   xt.add(GETTER(&PyType::is_void,        args_is_void));
+   INIT_METHODS_FOR_CLASS(PyType);
+ 
++  xt.finalize();  // the type must be ready before instances can be created
+   pythonType = xt.get_type_object();
+   xt.add_attr("bool8",   PyType::make(Type::bool8()));
+   xt.add_attr("date32",  PyType::make(Type::date32()));

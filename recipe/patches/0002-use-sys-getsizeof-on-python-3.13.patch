@@ -1,0 +1,25 @@
+From: conda-forge
+Subject: [PATCH] Use sys.getsizeof() on python 3.13+
+
+_PySys_GetSizeOf() is no longer part of the public C API in python 3.13.
+
+--- a/src/core/python/obj.cc
++++ b/src/core/python/obj.cc
+@@ -1191,7 +1191,16 @@
+ 
+ 
+ size_t _obj::get_sizeof() const {
+-  return _PySys_GetSizeOf(v);
++  #if PY_VERSION_HEX >= 0x030D0000
++    // `_PySys_GetSizeOf()` is no longer available in the public C API as of
++    // python 3.13, so fall back to calling `sys.getsizeof()` instead. The
++    // reference is deliberately leaked: releasing it from a static destructor
++    // would happen after the interpreter has been finalized.
++    static PyObject* getsizeofFn = oobj::import("sys", "getsizeof").release();
++    return robj(getsizeofFn).call(otuple{ robj(v) }).to_size_t();
++  #else
++    return _PySys_GetSizeOf(v);
++  #endif
+ }
+ 
+ size_t _obj::get_refcount() const {
