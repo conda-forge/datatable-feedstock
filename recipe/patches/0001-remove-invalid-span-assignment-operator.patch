@@ -1,0 +1,33 @@
+From: conda-forge
+Subject: [PATCH] Remove invalid span::operator= from vendored flatbuffers
+
+flatbuffers::span stores its members as `pointer const data_` and
+`const size_type count_`, so the body of the copy-assignment operator
+assigns to read-only members (and is also missing a return statement).
+The operator was never instantiated, so compilers before GCC 15 accepted
+it.  GCC 15 diagnoses errors in template bodies at definition time, which
+breaks the build with
+
+  error: assignment of read-only member 'flatbuffers::span<T, Extent>::count_'
+    [-Wtemplate-body]
+
+Since the members are const, span cannot be assignable anyway; drop the
+operator entirely.
+
+diff --git a/src/core/lib/flatbuffers/stl_emulation.h b/src/core/lib/flatbuffers/stl_emulation.h
+index c379353..ac50d46 100644
+--- a/src/core/lib/flatbuffers/stl_emulation.h
++++ b/src/core/lib/flatbuffers/stl_emulation.h
+@@ -543,12 +543,6 @@ class span FLATBUFFERS_FINAL_CLASS {
+   FLATBUFFERS_CONSTEXPR_CPP11 span(const span &other) FLATBUFFERS_NOEXCEPT
+       : data_(other.data_), count_(other.count_) {}
+ 
+-  FLATBUFFERS_CONSTEXPR_CPP14 span &operator=(const span &other)
+-      FLATBUFFERS_NOEXCEPT {
+-    data_ = other.data_;
+-    count_ = other.count_;
+-  }
+-
+   // Limited implementation of
+   // `template <class It> constexpr std::span(It first, size_type count);`.
+   //
