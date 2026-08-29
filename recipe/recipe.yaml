@@ -15,10 +15,18 @@ source:
     # the vendored flatbuffers has an invalid span::operator= that GCC 15
     # rejects at template definition time
     - patches/0001-remove-invalid-span-assignment-operator.patch
+    # _PySys_GetSizeOf() left the public C API in python 3.13
+    - patches/0002-use-sys-getsizeof-on-python-3.13.patch
+    # dt.Type patched tp_basicsize of a type() -- created class, which
+    # collides with the managed __dict__ of python 3.11+ and segfaults
+    # during garbage collection on 3.13
+    - patches/0003-make-dt-type-a-static-extension-type.patch
+    # np.NaN was removed and repr() of NaT changed in numpy 2
+    - patches/0004-fix-tests-for-numpy-2.patch
 
 build:
-  number: 1
-  skip: match(python, ">3.12") or win
+  number: 2
+  skip: match(python, ">3.13") or win
   script: |
     ${{ PYTHON }} ci/ext.py build
     ${{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
@@ -49,7 +57,7 @@ tests:
     requirements:
       run:
         - pip
-        - numpy <2.0
+        - numpy
         - pandas
         - pyarrow
         - xlrd <=1.2.0
