@@ -62,7 +62,12 @@ tests:
         - pytest-cov
     script:
       - rm tests/test-docs.py
-      - pytest tests -k 'not test_fread_from_cmd2 and not test_dt_version and not test_random_attack'
+      # test_multiprocessing_threadpool hangs on macOS, where multiprocessing
+      # defaults to the "spawn" start method and each child starts a thread
+      # pool of its own
+      - if: osx
+        then: pytest tests -k 'not test_fread_from_cmd2 and not test_dt_version and not test_random_attack and not test_multiprocessing_threadpool'
+        else: pytest tests -k 'not test_fread_from_cmd2 and not test_dt_version and not test_random_attack'
 
 about:
   summary: Python library for fast multi-threaded data manipulation and munging.
