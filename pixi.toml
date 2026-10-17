@@ -5,7 +5,7 @@
 
 [workspace]
 name = "datatable-feedstock"
-version = "2026.9.1"  # conda-smithy version used to generate this file
+version = "2026.9.23"  # conda-smithy version used to generate this file
 description = "Pixi configuration for conda-forge/datatable-feedstock"
 authors = ["@conda-forge/datatable"]
 channels = ["conda-forge"]
